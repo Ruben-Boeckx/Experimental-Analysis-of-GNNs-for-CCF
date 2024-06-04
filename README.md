@@ -1,2 +1,2 @@
 # A Benchmark of Network Learning Techniques
-This repository that contains the code for my master's thesis
+This repository contains the Python code that was used for the research on my master's thesis
