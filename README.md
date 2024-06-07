@@ -1,2 +1,2 @@
 # A Benchmark of Network Learning Techniques
-This repository contains the Python code that was used for the research on my master's thesis at KU Leuven.
+This repository includes the Python scripts developed for the research in my master's thesis at KU Leuven.
