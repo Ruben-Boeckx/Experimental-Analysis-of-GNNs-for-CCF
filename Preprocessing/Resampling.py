@@ -88,5 +88,5 @@ class Resampling:
         print('Fraud rate in training set after resampling: {:.2f}%'.format(self.check_fraud_rate(self.train_data)))
         print('Fraud rate in testing set after resampling: {:.2f}%'.format(self.check_fraud_rate(self.test_data)))
         self.normalize_data()
-        self.reset_index
+        self.reset_index()
         return self.dataset
