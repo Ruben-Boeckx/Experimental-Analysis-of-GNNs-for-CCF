@@ -49,8 +49,7 @@ class Resampling:
         resampled_df = X_resampled.copy()
         resampled_df['is_fraud'] = y_resampled
         resampled_df = resampled_df.sample(frac=1).reset_index(drop=True)
-        print('Length of resampled data:', len(resampled_df))
-              
+
         self.train_data = resampled_df
 
         self.train_data.drop(columns=['cc_user', 'merchant_num'], inplace=True)
@@ -60,8 +59,8 @@ class Resampling:
 
         self.test_data = self.test_data.copy()
         self.test_data.drop(columns=['cc_user', 'merchant_num'], inplace=True, errors='ignore')
-        self.test_data.loc[:, 'cc_user'] = self.test_data['cc_num'].rank(method='dense').astype(int) + 588
-        self.test_data.loc[:, 'merchant_num'] = self.test_data['merchant'].rank(method='dense').astype(int) + 414
+        self.test_data.loc[:, 'cc_user'] = self.test_data['cc_num'].rank(method='dense').astype(int) + max(self.train_data['cc_user']) + 1
+        self.test_data.loc[:, 'merchant_num'] = self.test_data['merchant'].rank(method='dense').astype(int) + max(self.train_data['merchant_num']) + 1
         self.test_data.drop(columns=['cc_num', 'merchant'], inplace=True)
 
         self.dataset = pd.concat([self.train_data, self.test_data], ignore_index=True)
@@ -88,6 +87,8 @@ class Resampling:
         self.resample_data()
         print('Fraud rate in training set after resampling: {:.2f}%'.format(self.check_fraud_rate(self.train_data)))
         print('Fraud rate in testing set after resampling: {:.2f}%'.format(self.check_fraud_rate(self.test_data)))
+        print('Length of training set: {}'.format(len(self.train_data)))
+        print('Length of testing set: {}'.format(len(self.test_data)))
         self.normalize_data()
         self.reset_index()
         return self.dataset
