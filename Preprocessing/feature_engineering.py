@@ -74,4 +74,5 @@ class FeatureEngineering:
         self.drop_unused_columns()
         self.count_encode_categorical_variables()
         self.reset_index()
+        print('Feature engineering completed.')
         return self.dataset

@@ -78,10 +78,10 @@ class Resampling:
 
     def apply_resampling(self):
         self.custom_train_test_split()
-        print('Fraud rate in training set before resampling:', self.check_fraud_rate(self.train_data))
-        print('Fraud rate in testing set:', self.check_fraud_rate(self.test_data))
+        print('Fraud rate in training set before resampling: {:.2f}%'.format(self.check_fraud_rate(self.train_data)))
+        print('Fraud rate in testing set: {:.2f}%'.format(self.check_fraud_rate(self.test_data)))
         self.resample_data()
-        print('Fraud rate in training set after resampling:', self.check_fraud_rate(self.train_data))
-        print('Fraud rate in testing set after resampling:', self.check_fraud_rate(self.test_data))
+        print('Fraud rate in training set after resampling: {:.2f}%'.format(self.check_fraud_rate(self.train_data)))
+        print('Fraud rate in testing set after resampling: {:.2f}%'.format(self.check_fraud_rate(self.test_data)))
         self.normalize_data()
         return self.dataset
