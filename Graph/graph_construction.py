@@ -8,7 +8,7 @@ class GraphConstruction:
         self.dataset = dataset
         self.client_unique_features = []
         self.merchant_unique_features = []
-        self.length_resampled_df = 953192
+        self.length_resampled_df = 902106
 
     def identify_unique_features(self):
         client_grouped_dataset = self.dataset.groupby('cc_user')
