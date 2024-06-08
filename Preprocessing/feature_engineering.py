@@ -64,7 +64,7 @@ class FeatureEngineering:
         # Define each unique transaction
         self.dataset.reset_index(inplace=True)
 
-    def execute(self):
+    def apply_feature_engineering(self):
         self.assign_unique_ids()
         self.transform_dates()
         self.calculate_distance()
