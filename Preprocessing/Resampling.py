@@ -49,7 +49,8 @@ class Resampling:
         resampled_df = X_resampled.copy()
         resampled_df['is_fraud'] = y_resampled
         resampled_df = resampled_df.sample(frac=1).reset_index(drop=True)
-
+        print('Length of resampled data:', len(resampled_df))
+              
         self.train_data = resampled_df
 
         self.train_data.drop(columns=['cc_user', 'merchant_num'], inplace=True)
