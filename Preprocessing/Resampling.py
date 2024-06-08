@@ -75,6 +75,10 @@ class Resampling:
         self.dataset[columns_to_normalize] = scaler.fit_transform(self.dataset[columns_to_normalize])
 
         return self.dataset
+    
+    def reset_index(self):
+        self.dataset.drop(columns='index')
+        self.dataset['index'] = range(len(self.dataset))
 
     def apply_resampling(self):
         self.custom_train_test_split()
@@ -84,4 +88,5 @@ class Resampling:
         print('Fraud rate in training set after resampling: {:.2f}%'.format(self.check_fraud_rate(self.train_data)))
         print('Fraud rate in testing set after resampling: {:.2f}%'.format(self.check_fraud_rate(self.test_data)))
         self.normalize_data()
+        self.reset_index
         return self.dataset
