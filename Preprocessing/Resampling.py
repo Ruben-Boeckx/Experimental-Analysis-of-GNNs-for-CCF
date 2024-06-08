@@ -23,8 +23,8 @@ class Resampling:
 
         assert train_mask.sum() + test_mask.sum() <= len(self.dataset), "Overlap detected between train and test sets"
 
-        self.train_data = self.dataset[train_mask]
-        self.test_data = self.dataset[test_mask]
+        self.train_data = self.dataset.loc[train_mask].copy()
+        self.test_data = self.dataset.loc[test_mask].copy()
 
         assert set(self.train_data['cc_user']).isdisjoint(set(self.test_data['cc_user'])), "Overlap detected in cc_user"
         assert set(self.train_data['merchant_num']).isdisjoint(set(self.test_data['merchant_num'])), "Overlap detected in merchant_num"
@@ -57,9 +57,10 @@ class Resampling:
         self.train_data['merchant_num'] = self.train_data['merchant'].rank(method='dense') - 1
         self.train_data.drop(columns=['cc_num', 'merchant'], inplace=True)
 
+        self.test_data = self.test_data.copy()
         self.test_data.drop(columns=['cc_user', 'merchant_num'], inplace=True, errors='ignore')
-        self.test_data['cc_user'] = self.test_data['cc_num'].rank(method='dense').astype(int) + 588
-        self.test_data['merchant_num'] = self.test_data['merchant'].rank(method='dense').astype(int) + 414
+        self.test_data.loc[:, 'cc_user'] = self.test_data['cc_num'].rank(method='dense').astype(int) + 588
+        self.test_data.loc[:, 'merchant_num'] = self.test_data['merchant'].rank(method='dense').astype(int) + 414
         self.test_data.drop(columns=['cc_num', 'merchant'], inplace=True)
 
         self.dataset = pd.concat([self.train_data, self.test_data], ignore_index=True)
@@ -77,9 +78,10 @@ class Resampling:
 
     def apply_resampling(self):
         self.custom_train_test_split()
-        self.check_fraud_rate(self.train_data)
-        self.check_fraud_rate(self.test_data)
+        print('Fraud rate in training set before resampling:', self.check_fraud_rate(self.train_data))
+        print('Fraud rate in testing set:', self.check_fraud_rate(self.test_data))
         self.resample_data()
-        self.check_fraud_rate(self.train_data)
+        print('Fraud rate in training set after resampling:', self.check_fraud_rate(self.train_data))
+        print('Fraud rate in testing set after resampling:', self.check_fraud_rate(self.test_data))
         self.normalize_data()
         return self.dataset
