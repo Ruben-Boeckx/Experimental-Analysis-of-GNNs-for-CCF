@@ -37,8 +37,8 @@ class Resampling:
         return fraud_rate
 
     def resample_data(self):
-        oversampler = RandomOverSampler(sampling_strategy='minority')
-        undersampler = RandomUnderSampler(sampling_strategy='majority')
+        oversampler = RandomOverSampler(sampling_strategy='minority', random_state=self.random_state)
+        undersampler = RandomUnderSampler(sampling_strategy='majority', random_state=self.random_state)
 
         X = self.train_data.drop('is_fraud', axis=1)
         y = self.train_data['is_fraud']
@@ -48,19 +48,19 @@ class Resampling:
 
         resampled_df = X_resampled.copy()
         resampled_df['is_fraud'] = y_resampled
-        resampled_df = resampled_df.sample(frac=1).reset_index(drop=True)
+        resampled_df = resampled_df.sample(frac=1, random_state=self.random_state).reset_index(drop=True)
 
         self.train_data = resampled_df
 
         self.train_data.drop(columns=['cc_user', 'merchant_num'], inplace=True)
-        self.train_data['cc_user'] = self.train_data['cc_num'].rank(method='dense') - 1
-        self.train_data['merchant_num'] = self.train_data['merchant'].rank(method='dense') - 1
+        self.train_data['cc_user'] = self.train_data['cc_num'].rank(method='dense').astype(int) - 1
+        self.train_data['merchant_num'] = self.train_data['merchant'].rank(method='dense').astype(int) - 1
         self.train_data.drop(columns=['cc_num', 'merchant'], inplace=True)
 
         self.test_data = self.test_data.copy()
         self.test_data.drop(columns=['cc_user', 'merchant_num'], inplace=True, errors='ignore')
-        self.test_data.loc[:, 'cc_user'] = self.test_data['cc_num'].rank(method='dense').astype(int) + max(self.train_data['cc_user']) + 1
-        self.test_data.loc[:, 'merchant_num'] = self.test_data['merchant'].rank(method='dense').astype(int) + max(self.train_data['merchant_num']) + 1
+        self.test_data['cc_user'] = self.test_data['cc_num'].rank(method='dense').astype(int) + max(self.train_data['cc_user'])
+        self.test_data['merchant_num'] = self.test_data['merchant'].rank(method='dense').astype(int) + max(self.train_data['merchant_num'])
         self.test_data.drop(columns=['cc_num', 'merchant'], inplace=True)
 
         self.dataset = pd.concat([self.train_data, self.test_data], ignore_index=True)
@@ -77,7 +77,7 @@ class Resampling:
         return self.dataset
     
     def reset_index(self):
-        self.dataset.drop(columns='index')
+        self.dataset.drop(columns='index', inplace=True, errors='ignore')
         self.dataset['index'] = range(len(self.dataset))
 
     def apply_resampling(self):
