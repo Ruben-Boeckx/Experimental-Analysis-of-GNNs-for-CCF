@@ -9,39 +9,11 @@ class GraphConstruction:
         self.client_unique_features = []
         self.merchant_unique_features = []
         self.length_resampled_df = 953192
-
-    def identify_unique_features(self):
-        client_grouped_dataset = self.dataset.groupby('cc_user')
-
-        for cc_user, group in client_grouped_dataset:
-            for column in group.columns:
-                if group[column].nunique() == 1:
-                    self.client_unique_features.append(column)
-
-        self.client_unique_features = list(set(self.client_unique_features))
-
-        for feature in self.dataset.columns:
-            if self.dataset[feature].nunique() == client_grouped_dataset[feature].nunique().max() and feature in self.client_unique_features:
-                self.client_unique_features.remove(feature)
-
-        merchant_grouped_dataset = self.dataset.groupby('merchant_num')
-
-        for merchant_num, group in merchant_grouped_dataset:
-            for column in group.columns:
-                if group[column].nunique() == 1:
-                    self.merchant_unique_features.append(column)
-
-        self.merchant_unique_features = list(set(self.merchant_unique_features))
-
-        for feature in self.dataset.columns:
-            if self.dataset[feature].nunique() == merchant_grouped_dataset[feature].nunique().max() and feature in self.merchant_unique_features:
-                self.merchant_unique_features.remove(feature)
-
-        # Manually set features
+        
+    def generate_tables(self):
         self.client_unique_features = ['job', 'gender', 'age', 'state', 'city']
         self.merchant_unique_features = ['category']
 
-    def generate_tables(self):
         clients = pd.DataFrame()
         merchants = pd.DataFrame()
         
@@ -114,7 +86,6 @@ class GraphConstruction:
         return fraud_percentage_train_mask, fraud_percentage_test_mask, fraud_percentage_val_mask
 
     def apply_graph_construction(self):
-        self.identify_unique_features()
         clients, merchants = self.generate_tables()
         data = self.construct_graph(clients, merchants)
         fraud_percentage_train_mask, fraud_percentage_test_mask, fraud_percentage_val_mask = self.calculate_fraud_percentage(data)
