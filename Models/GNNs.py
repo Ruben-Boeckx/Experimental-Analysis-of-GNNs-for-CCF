@@ -14,20 +14,6 @@ class GraphSAGE(torch.nn.Module):
         x = self.dropout(x)
         x = self.conv2(x, edge_index)
         return x
-    
-# Graph Convolutional Network for node classification, FIX
-class GCN(torch.nn.Module):
-    def __init__(self, hidden_channels, out_channels, dropout_prob):
-        super(GCN, self).__init__()
-        self.conv1 = GCNConv((-1, -1), hidden_channels)
-        self.conv2 = GCNConv((-1, -1), out_channels)
-        self.dropout = torch.nn.Dropout(p=dropout_prob)
-
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index).relu()
-        x = self.dropout(x)
-        x = self.conv2(x, edge_index)
-        return x
 
 # Graph Attention Network for node classification, OK
 class GAT(torch.nn.Module):
