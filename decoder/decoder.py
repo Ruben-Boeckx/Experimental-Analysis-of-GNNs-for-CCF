@@ -21,3 +21,8 @@ class LinFFN(Decoder):
         h = F.relu(h)
         h = self.fc2(h)
         return h
+
+def get_decoder(decoder): 
+    if decoder == 'LIN':
+        return LinFFN
+    assert True , 'INCORRECT DECODER NAME'

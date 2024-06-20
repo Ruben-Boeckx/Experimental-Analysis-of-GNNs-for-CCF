@@ -1,10 +1,9 @@
 from pprint import pprint
 from typing import Tuple
-from utils.utils import upsample_embeddings
 import torch 
 import torch.nn as nn
 from models.GNNs import get_GNN
-from decoder.decoder import LinFFN
+from decoder.decoder import get_decoder
 
 # Copied from Tiukhova paper, will probably need to be modified
 class GNN_only(Model): 
@@ -23,7 +22,7 @@ class GNN_only(Model):
             'search_depth':search_depth
         }
         self.GNN = get_GNN(GNN)(**gnn_kw)
-        self.decoder = LinFFN(DECODER)(gnn_output_dim)
+        self.decoder = get_decoder(DECODER)(gnn_output_dim)
 
     def forward_call(self, data, device): 
         labs = data.y
