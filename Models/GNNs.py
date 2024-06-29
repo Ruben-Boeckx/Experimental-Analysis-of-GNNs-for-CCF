@@ -1,9 +1,48 @@
-from re import search
-import torch.nn as nn 
-import torch 
-from torch_geometric.nn import GCNConv, GATv2Conv,GINEConv,GraphSAGE, SAGEConv, GATConv
-from torch.nn import Linear, LayerNorm
+import torch
 import torch.nn.functional as F
+from torch import nn
+from torch_geometric.nn import SAGEConv, Linear
+from typing import Union, Dict
+
+
+class GraphSAGE1(torch.nn.Module):
+    def __init__(self, 
+                 in_channels: Union[int, Dict[str, int]],
+                 hidden_dim: int,
+                 embedding_dim: int,
+                 output_dim: int,
+                 num_layers: int,
+                 dropout_rate: float,
+                 sage_aggr: str):
+        super(GraphSAGE1, self).__init__()
+
+        self.in_channels = in_channels
+        self.hidden_dim = hidden_dim
+        self.embedding_dim = embedding_dim
+        self.output_dim = output_dim
+        self.dropout_rate = dropout_rate
+        self.dropout = nn.Dropout(dropout_rate)
+        self.sage_aggr = sage_aggr
+        self.num_layers = num_layers
+        self.sage_layers = nn.ModuleList()
+        
+        self.sage_layers.append(SAGEConv(in_channels, hidden_dim, aggr=sage_aggr))
+        for _ in range(num_layers - 2):
+            self.sage_layers.append(SAGEConv(hidden_dim, hidden_dim, aggr=sage_aggr))
+        self.sage_layers.append(SAGEConv(hidden_dim, embedding_dim, aggr=sage_aggr))
+
+        self.out = Linear(embedding_dim, output_dim)
+
+    def forward(self, x_dict, edge_index_dict):
+        out = x_dict
+        for i, layer in enumerate(self.sage_layers):
+            out = {key: layer(out[key], edge_index_dict[key]) for key in out.keys()}
+            if i != len(self.sage_layers) - 1:
+                out = {key: F.relu(value) for key, value in out.items()}
+                out = {key: self.dropout(value) for key, value in out.items()}
+        
+        out_transaction = self.out(out['transaction'])
+        return out_transaction
 
 # GraphSAGE for node classification, OK
 class GraphSAGE(torch.nn.Module):
