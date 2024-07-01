@@ -44,6 +44,43 @@ class GraphSAGE1(torch.nn.Module):
         out_transaction = self.out(out['transaction'])
         return out_transaction
 
+class GraphSAGE2(torch.nn.Module):
+    def __init__(self, 
+                 in_channels: Union[int, Dict[str, int]],
+                 hidden_dim: int,
+                 embedding_dim: int,
+                 output_dim: int,
+                 num_layers: int,
+                 dropout_rate: float,
+                 sage_aggr: str):
+        super(GraphSAGE2, self).__init__()
+
+        self.in_channels = in_channels
+        self.hidden_dim = hidden_dim
+        self.embedding_dim = embedding_dim
+        self.output_dim = output_dim
+        self.dropout_rate = dropout_rate
+        self.dropout = nn.Dropout(dropout_rate)
+        self.sage_aggr = sage_aggr
+        self.num_layers = num_layers
+        self.sage_layers = nn.ModuleList()
+        
+        self.sage_layers.append(SAGEConv((in_channels, in_channels), hidden_dim, aggr=sage_aggr))
+        for _ in range(num_layers - 2):
+            self.sage_layers.append(SAGEConv((hidden_dim, hidden_dim), hidden_dim, aggr=sage_aggr))
+        self.sage_layers.append(SAGEConv(hidden_dim, embedding_dim, aggr=sage_aggr))
+
+        self.out = Linear(embedding_dim, output_dim)
+    
+    def forward(self, x, edge_index):
+        for conv in self.sage_layers:
+            x = conv(x, edge_index).relu()
+            if self.dropout:
+                x = self.dropout(x)
+        x = self.out(x)
+
+        return x
+
 # GraphSAGE for node classification, OK
 class GraphSAGE(torch.nn.Module):
     def __init__(self, hidden_channels, out_channels, dropout_prob):
