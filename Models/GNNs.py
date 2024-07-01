@@ -65,20 +65,36 @@ class GraphSAGE2(torch.nn.Module):
         self.num_layers = num_layers
         self.sage_layers = nn.ModuleList()
         
+        if num_layers == 1:
+            self.sage1 = SAGEConv((-1,-1), embedding_dim, aggr=sage_aggr)
+        else:
+            self.sage1 = SAGEConv((-1,-1), hidden_dim, aggr=sage_aggr)
+            for _ in range(num_layers-2):
+                self.sage_layers.append(SAGEConv((-1,-1), hidden_dim, aggr=sage_aggr))
+            self.sage2 = SAGEConv((-1,-1), embedding_dim, aggr=sage_aggr)
+
+        self.out = Linear(embedding_dim, output_dim)
+
+        """
         self.sage_layers.append(SAGEConv((in_channels, in_channels), hidden_dim, aggr=sage_aggr))
         for _ in range(num_layers - 2):
             self.sage_layers.append(SAGEConv((hidden_dim, hidden_dim), hidden_dim, aggr=sage_aggr))
         self.sage_layers.append(SAGEConv(hidden_dim, embedding_dim, aggr=sage_aggr))
+        """
 
-        self.out = Linear(embedding_dim, output_dim)
-    
     def forward(self, x, edge_index):
-        for conv in self.sage_layers:
-            x = conv(x, edge_index).relu()
-            x = self.dropout(x)
-        x = self.out(x)
-
-        return x
+        h = self.sage1(x, edge_index)
+        h = F.relu(h)
+        h = self.dropout(h)
+        if self.n_layers > 1:
+            for layer in self.sage_hidden:
+                h = layer(h, edge_index)
+                h = F.relu(h)
+                h = self.dropout(h)
+            h = self.sage2(h, edge_index)
+        out = self.out(h)
+        
+        return out, h
     
 class GraphSAGE3(torch.nn.Module):
     def __init__(self, 
