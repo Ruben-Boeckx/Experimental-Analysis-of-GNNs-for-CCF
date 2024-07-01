@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
-from torch_geometric.nn import SAGEConv, Linear
+from torch_geometric.nn import SAGEConv, Linear, GATConv
     
 
 class GraphSAGE2(torch.nn.Module):
