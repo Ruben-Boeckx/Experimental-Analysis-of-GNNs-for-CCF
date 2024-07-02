@@ -53,8 +53,7 @@ class GAT2(torch.nn.Module):
                  embedding_dim: int,
                  output_dim: int,
                  num_layers: int,
-                 dropout_rate: float,
-                 heads: int):
+                 dropout_rate: float,):
         super(GAT2, self).__init__()
 
         self.hidden_dim = hidden_dim
@@ -62,17 +61,16 @@ class GAT2(torch.nn.Module):
         self.output_dim = output_dim
         self.dropout_rate = dropout_rate
         self.dropout = nn.Dropout(dropout_rate)
-        self.heads = heads
         self.num_layers = num_layers
         self.gat_layers = nn.ModuleList()
         
         if num_layers == 1:
-            self.gat1 = GATv2Conv((-1, -1), embedding_dim, heads=heads, concat=False, add_self_loops=False)
+            self.gat1 = GATConv((-1, -1), embedding_dim, add_self_loops=False)
         else:
-            self.gat1 = GATv2Conv((-1, -1), hidden_dim, heads=heads, add_self_loops=False)
+            self.gat1 = GATConv((-1, -1), hidden_dim, add_self_loops=False)
             for _ in range(num_layers - 2):
-                self.gat_layers.append(GATv2Conv((-1, -1), hidden_dim, heads=heads, add_self_loops=False))
-            self.gat2 = GATv2Conv((-1, -1), embedding_dim, heads=heads, concat=False, add_self_loops=False)
+                self.gat_layers.append(GATConv((-1, -1), hidden_dim, add_self_loops=False))
+            self.gat2 = GATConv((-1, -1), embedding_dim, add_self_loops=False)
 
         self.out = Linear(embedding_dim, output_dim)
 
