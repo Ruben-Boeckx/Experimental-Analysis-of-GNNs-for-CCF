@@ -1,8 +1,49 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
-from torch_geometric.nn import SAGEConv, Linear, GATConv, GATv2Conv
-    
+from torch_geometric.nn import SAGEConv, Linear, GATConv, GATv2Conv, GCNConv
+
+
+class GCN(torch.nn.Module):
+    def __init__(self, 
+                 hidden_dim: int,
+                 embedding_dim: int,
+                 output_dim: int,
+                 num_layers: int,
+                 dropout_rate: float):
+        super(GCN, self).__init__()
+
+        self.hidden_dim = hidden_dim
+        self.embedding_dim = embedding_dim
+        self.output_dim = output_dim
+        self.dropout_rate = dropout_rate
+        self.dropout = nn.Dropout(dropout_rate)
+        self.num_layers = num_layers
+        self.gcn_layers = nn.ModuleList()
+        
+        if num_layers == 1:
+            self.sage1 = GCNConv((-1, -1), embedding_dim)
+        else:
+            self.sage1 = GCNConv((-1, -1), hidden_dim)
+            for _ in range(num_layers - 2):
+                self.gcn_layers.append(GCNConv((-1, -1), hidden_dim))
+            self.sage2 = GCNConv((-1, -1), embedding_dim)
+
+        self.out = Linear(embedding_dim, output_dim)
+
+    def forward(self, x, edge_index):
+        h = self.sage1(x, edge_index)
+        h = F.relu(h)
+        h = self.dropout(h)
+        if self.num_layers > 1:
+            for layer in self.gcn_layers:
+                h = layer(h, edge_index)
+                h = F.relu(h)
+                h = self.dropout(h)
+            h = self.sage2(h, edge_index)
+        out = self.out(h)
+        
+        return out
 
 class GraphSAGE2(torch.nn.Module):
     def __init__(self, 
