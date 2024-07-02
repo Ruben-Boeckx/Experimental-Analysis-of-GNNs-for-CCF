@@ -53,7 +53,8 @@ class GAT2(torch.nn.Module):
                  embedding_dim: int,
                  output_dim: int,
                  num_layers: int,
-                 dropout_rate: float,):
+                 dropout_rate: float,
+                 heads: int):
         super(GAT2, self).__init__()
 
         self.hidden_dim = hidden_dim
@@ -62,15 +63,16 @@ class GAT2(torch.nn.Module):
         self.dropout_rate = dropout_rate
         self.dropout = nn.Dropout(dropout_rate)
         self.num_layers = num_layers
+        self.heads = heads
         self.gat_layers = nn.ModuleList()
         
         if num_layers == 1:
-            self.gat1 = GATConv((-1, -1), embedding_dim, add_self_loops=False)
+            self.gat1 = GATv2Conv((-1, -1), embedding_dim, heads=heads, add_self_loops=False)
         else:
-            self.gat1 = GATConv((-1, -1), hidden_dim, add_self_loops=False)
+            self.gat1 = GATv2Conv((-1, -1), hidden_dim, heads=heads, add_self_loops=False)
             for _ in range(num_layers - 2):
-                self.gat_layers.append(GATConv((-1, -1), hidden_dim, add_self_loops=False))
-            self.gat2 = GATConv((-1, -1), embedding_dim, add_self_loops=False)
+                self.gat_layers.append(GATv2Conv((-1, -1), hidden_dim, heads=heads, add_self_loops=False))
+            self.gat2 = GATv2Conv((-1, -1), embedding_dim, heads=heads, add_self_loops=False)
 
         self.out = Linear(embedding_dim, output_dim)
 
@@ -85,6 +87,49 @@ class GAT2(torch.nn.Module):
                 h = self.dropout(h)
             h = self.gat2(h, edge_index)
         out = self.out(h)
+        
+        return out
+
+class GAT3(torch.nn.Module):
+    def __init__(self, 
+                 in_dim: int,
+                 hidden_dim: int,
+                 embedding_dim: int,
+                 output_dim: int,
+                 num_layers: int,
+                 dropout_rate: float,
+                 heads: int):
+        super(GAT3, self).__init__()
+
+        self.in_dim = in_dim
+        self.hidden_dim = hidden_dim
+        self.embedding_dim = embedding_dim
+        self.output_dim = output_dim
+        self.dropout_rate = dropout_rate
+        self.dropout = nn.Dropout(dropout_rate)
+        self.num_layers = num_layers
+        self.heads = heads
+        self.gat_layers = nn.ModuleList()
+        
+        if num_layers == 1:
+            self.gat_layers.append(GATv2Conv(in_dim, embedding_dim // heads, heads=heads, concat=True, add_self_loops=False))
+        else:
+            self.gat_layers.append(GATv2Conv(in_dim, hidden_dim // heads, heads=heads, concat=True, add_self_loops=False))
+            for _ in range(num_layers - 2):
+                self.gat_layers.append(GATv2Conv(hidden_dim, hidden_dim // heads, heads=heads, concat=True, add_self_loops=False))
+            self.gat_layers.append(GATv2Conv(hidden_dim, embedding_dim // heads, heads=heads, concat=True, add_self_loops=False))
+
+        self.out = Linear(embedding_dim, output_dim)
+
+    def forward(self, x, edge_index):
+        for i, layer in enumerate(self.gat_layers):
+            x = layer(x, edge_index)
+            if i < len(self.gat_layers) - 1:
+                x = F.elu(x)
+                x = self.dropout(x)
+        
+        x = F.elu(x)
+        out = self.out(x)
         
         return out
 
