@@ -64,27 +64,32 @@ class GAT2(torch.nn.Module):
         self.num_layers = num_layers
         self.heads = heads
         self.gat_layers = nn.ModuleList()
+        self.skip_layers = nn.ModuleList()
         
         if num_layers == 1:
             self.gat1 = GATv2Conv((-1, -1), embedding_dim, heads=heads, add_self_loops=False)
+            self.skip1 = Linear(-1, embedding_dim)
         else:
             self.gat1 = GATv2Conv((-1, -1), hidden_dim, heads=heads, add_self_loops=False)
+            self.skip1 = Linear(-1, hidden_dim)
             for _ in range(num_layers - 2):
                 self.gat_layers.append(GATv2Conv((-1, -1), hidden_dim, heads=heads, add_self_loops=False))
+                self.skip_layers.append(Linear(-1, hidden_dim))
             self.gat2 = GATv2Conv((-1, -1), embedding_dim, heads=heads, add_self_loops=False)
+            self.skip2 = Linear(-1, embedding_dim)
 
         self.out = Linear(embedding_dim, output_dim)
 
     def forward(self, x, edge_index):
-        h = self.gat1(x, edge_index)
+        h = self.gat1(x, edge_index) + self.skip1(x)
         h = F.relu(h)
         h = self.dropout(h)
         if self.num_layers > 1:
-            for layer in self.gat_layers:
-                h = layer(h, edge_index)
-                h = F.relu(h)
+            for gat_layer, skip_layer in zip(self.gat_layers, self.skip_layers):
+                h_new = gat_layer(h, edge_index) + skip_layer(h)
+                h = F.relu(h_new)
                 h = self.dropout(h)
-            h = self.gat2(h, edge_index)
+            h = self.gat2(h, edge_index) + self.skip2(h)
         out = self.out(h)
         
         return out
