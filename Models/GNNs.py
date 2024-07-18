@@ -67,15 +67,15 @@ class GAT(torch.nn.Module):
         self.lin_layers = nn.ModuleList()
         
         if num_layers == 1:
-            self.gat1 = GATv2Conv((-1, -1), embedding_dim, heads=heads, concat=False, add_self_loops=False)
+            self.gat1 = GATConv((-1, -1), embedding_dim, heads=heads, concat=False, add_self_loops=False)
             self.lin1 = Linear(-1, embedding_dim)
         else:
-            self.gat1 = GATv2Conv((-1, -1), hidden_dim, heads=heads, add_self_loops=False)
+            self.gat1 = GATConv((-1, -1), hidden_dim, heads=heads, add_self_loops=False)
             self.lin1 = Linear(-1, heads * hidden_dim)
             for _ in range(num_layers - 2):
-                self.gat_layers.append(GATv2Conv(heads * hidden_dim, hidden_dim, heads=heads, add_self_loops=False))
+                self.gat_layers.append(GATConv(heads * hidden_dim, hidden_dim, heads=heads, add_self_loops=False))
                 self.lin_layers.append(Linear(heads * hidden_dim, heads * hidden_dim))
-            self.gat2 = GATv2Conv(heads * hidden_dim, embedding_dim, heads=heads, concat=False, add_self_loops=False)
+            self.gat2 = GATConv(heads * hidden_dim, embedding_dim, heads=heads, concat=False, add_self_loops=False)
             self.lin2 = Linear(heads * hidden_dim, embedding_dim)
 
         self.out = Linear(embedding_dim, output_dim)
@@ -96,3 +96,17 @@ class GAT(torch.nn.Module):
         out = self.out(h)
         
         return out
+
+class GAT(torch.nn.Module):
+    def __init__(self, hidden_channels, out_channels):
+        super().__init__()
+        self.conv1 = GATConv((-1, -1), hidden_channels, add_self_loops=False)
+        self.lin1 = Linear(-1, hidden_channels)
+        self.conv2 = GATConv((-1, -1), out_channels, add_self_loops=False)
+        self.lin2 = Linear(-1, out_channels)
+
+    def forward(self, x, edge_index):
+        x = self.conv1(x, edge_index) + self.lin1(x)
+        x = x.relu()
+        x = self.conv2(x, edge_index) + self.lin2(x)
+        return x
