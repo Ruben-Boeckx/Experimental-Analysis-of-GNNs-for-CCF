@@ -97,7 +97,7 @@ class GAT(torch.nn.Module):
         
         return out
 
-class GAT(torch.nn.Module):
+class GAT2(torch.nn.Module):
     def __init__(self, hidden_channels, out_channels):
         super().__init__()
         self.conv1 = GATConv((-1, -1), hidden_channels, add_self_loops=False)
