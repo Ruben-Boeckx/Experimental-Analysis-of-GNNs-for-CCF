@@ -10,16 +10,26 @@ class ClassifierEvaluator:
         self.y_train = y_train
         self.X_test = X_test
         self.y_test = y_test
-        self.rf_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
+        self.rf_classifier = RandomForestClassifier(random_state=42)
         self.log_reg = LogisticRegression(max_iter=1000, random_state=42)
-        self.grid_search = None
+        self.grid_search_rf = None
+        self.grid_search_lr = None
+        self.best_rf = None
         self.best_log_reg = None
     
     def train_random_forest(self):
-        self.rf_classifier.fit(self.X_train, self.y_train)
+        param_grid_rf = {
+            'n_estimators': [50, 100, 200],
+            'max_depth': [None, 10, 20, 30],
+            'min_samples_split': [2, 5, 10],
+            'min_samples_leaf': [1, 2, 4]
+        }
+        self.grid_search_rf = GridSearchCV(self.rf_classifier, param_grid_rf, cv=5, scoring='roc_auc')
+        self.grid_search_rf.fit(self.X_train, self.y_train)
+        self.best_rf = self.grid_search_rf.best_estimator_
     
     def evaluate_random_forest(self):
-        y_proba_rf = self.rf_classifier.predict_proba(self.X_test)[:, 1]
+        y_proba_rf = self.best_rf.predict_proba(self.X_test)[:, 1]
         fpr_rf, tpr_rf, _ = roc_curve(self.y_test, y_proba_rf)
         roc_auc_rf = auc(fpr_rf, tpr_rf)
         precision_rf, recall_rf, _ = precision_recall_curve(self.y_test, y_proba_rf)
@@ -34,14 +44,14 @@ class ClassifierEvaluator:
         }
     
     def train_logistic_regression(self):
-        param_grid = {
+        param_grid_lr = {
             'C': [0.01, 0.1, 1, 10, 100],
             'penalty': ['l1', 'l2'],
             'solver': ['liblinear']
         }
-        self.grid_search = GridSearchCV(self.log_reg, param_grid, cv=5, scoring='roc_auc')
-        self.grid_search.fit(self.X_train, self.y_train)
-        self.best_log_reg = self.grid_search.best_estimator_
+        self.grid_search_lr = GridSearchCV(self.log_reg, param_grid_lr, cv=5, scoring='roc_auc')
+        self.grid_search_lr.fit(self.X_train, self.y_train)
+        self.best_log_reg = self.grid_search_lr.best_estimator_
     
     def evaluate_logistic_regression(self):
         y_proba_lr = self.best_log_reg.predict_proba(self.X_test)[:, 1]
